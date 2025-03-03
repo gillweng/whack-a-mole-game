@@ -6,7 +6,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
 
         body {
-            background: url('background.png') no-repeat center / cover; /* 背景圖片 */
+            background: url('background.png') no-repeat center / cover;
             margin: 0;
             height: 100vh;
             display: flex;
@@ -17,7 +17,7 @@
 
         .game-container {
             width: 700px;
-            background: transparent; /* 移除白色背景，讓背景圖透出 */
+            background: transparent;
             padding: 20px;
             border-radius: 20px;
             text-align: center;
@@ -25,9 +25,9 @@
 
         h1 {
             color: #2E8B57;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* 加強文字陰影以保持可見 */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
             margin: 0;
-            background: rgba(255, 255, 255, 0.7); /* 文字背景微白 */
+            background: rgba(255, 255, 255, 0.7);
             padding: 5px 10px;
             border-radius: 10px;
             display: inline-block;
@@ -37,8 +37,8 @@
             font-size: 28px;
             color: #FF4500;
             margin: 15px 0;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* 加強陰影 */
-            background: rgba(255, 255, 255, 0.7); /* 微白背景 */
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+            background: rgba(255, 255, 255, 0.7);
             padding: 5px 10px;
             border-radius: 10px;
             display: inline-block;
@@ -48,8 +48,8 @@
             font-size: 24px;
             color: #4682B4;
             margin: 10px 0;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* 加強陰影 */
-            background: rgba(255, 255, 255, 0.7); /* 微白背景 */
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+            background: rgba(255, 255, 255, 0.7);
             padding: 5px 10px;
             border-radius: 10px;
             display: inline-block;
@@ -74,7 +74,7 @@
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr); /* 5 列 */
+            grid-template-columns: repeat(5, 1fr);
             gap: 15px;
             width: 600px;
             margin: 30px auto;
@@ -83,7 +83,7 @@
         .hole {
             width: 100px;
             height: 100px;
-            background: radial-gradient(circle, rgba(139, 69, 19, 0.8) 20%, rgba(101, 67, 33, 0.8) 70%); /* 透明洞底 */
+            background: radial-gradient(circle, rgba(139, 69, 19, 0.8) 20%, rgba(101, 67, 33, 0.8) 70%);
             border-radius: 50%;
             position: relative;
             overflow: hidden;
@@ -94,7 +94,7 @@
         .mole {
             width: 80px;
             height: 80px;
-            background: url('1.png') no-repeat center / contain; /* 地鼠圖片 */
+            background: url('1.png') no-repeat center / contain;
             position: absolute;
             top: 10px;
             left: 10px;
@@ -146,71 +146,91 @@
         const scoreDisplay = document.getElementById('score');
         const timeDisplay = document.getElementById('time');
         const startBtn = document.getElementById('start-btn');
-        
+
         let score = 0;
         let timeLeft = 30;
         let gameActive = false;
         let gameTimer;
         let countdownTimer;
-        
+        let moleTimer;
+
+        // 添加音頻物件
+        const backgroundMusic = new Audio('background-music.mp3');
+        const hitSound = new Audio('hit-sound.mp3');
+
+        // 設置背景音樂循環播放
+        backgroundMusic.loop = true;
+
         function randomHole() {
             const idx = Math.floor(Math.random() * holes.length);
             return holes[idx];
         }
-        
+
         function showMole() {
             if (!gameActive) return;
-            
+
             const hole = randomHole();
             const mole = hole.querySelector('.mole');
-            
+
             mole.classList.remove('hidden');
-            
-            setTimeout(() => {
+
+            moleTimer = setTimeout(() => {
                 mole.classList.add('hidden');
-                showMole();
+                if (gameActive) showMole();
             }, 1000);
         }
-        
+
         moles.forEach(mole => {
             mole.addEventListener('click', () => {
                 if (!mole.classList.contains('hidden') && gameActive) {
                     score++;
                     scoreDisplay.textContent = score;
                     mole.classList.add('hidden');
+                    // 播放擊中聲音
+                    hitSound.play().catch(error => console.log('打擊聲音播放失敗:', error));
                 }
             });
         });
-        
+
         function startCountdown() {
             countdownTimer = setInterval(() => {
                 timeLeft--;
                 timeDisplay.textContent = timeLeft;
                 if (timeLeft <= 0) {
-                    clearInterval(countdownTimer);
+                    endGame();
                 }
             }, 1000);
         }
-        
+
+        function startGame() {
+            backgroundMusic.play().catch(error => console.log('背景音樂播放失敗:', error));
+            showMole();
+            startCountdown();
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(countdownTimer);
+            clearTimeout(moleTimer);
+            backgroundMusic.pause(); // 停止背景音樂
+            backgroundMusic.currentTime = 0; // 重置背景音樂
+            startBtn.textContent = '重新開始';
+            alert(`遊戲結束！你的得分是：${score}`);
+        }
+
         startBtn.addEventListener('click', () => {
             if (gameActive) return;
-            
+
             gameActive = true;
             score = 0;
             timeLeft = 30;
             scoreDisplay.textContent = score;
             timeDisplay.textContent = timeLeft;
             startBtn.textContent = '遊戲進行中...';
-            
-            showMole();
-            startCountdown();
-            
-            gameTimer = setTimeout(() => {
-                gameActive = false;
-                clearInterval(countdownTimer);
-                startBtn.textContent = '重新開始';
-                alert(`遊戲結束！你的得分是：${score}`);
-            }, 30000);
+
+            startGame();
+
+            gameTimer = setTimeout(endGame, 30000);
         });
     </script>
 </body>
