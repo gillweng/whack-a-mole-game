@@ -161,17 +161,6 @@
         // 設置背景音樂循環播放
         backgroundMusic.loop = true;
 
-        // 函數來確保音頻上下文在用戶互動後啟用
-        function ensureAudioContext() {
-            return new Promise((resolve) => {
-                if (backgroundMusic.readyState >= 2) {
-                    resolve();
-                } else {
-                    backgroundMusic.addEventListener('loadeddata', resolve, { once: true });
-                }
-            });
-        }
-
         function randomHole() {
             const idx = Math.floor(Math.random() * holes.length);
             return holes[idx];
@@ -213,16 +202,10 @@
             }, 1000);
         }
 
-        async function startGame() {
-            try {
-                // 確保音頻上下文在用戶互動後啟用
-                await ensureAudioContext();
-                backgroundMusic.play().catch(error => console.log('背景音樂播放失敗:', error));
-                showMole();
-                startCountdown();
-            } catch (error) {
-                console.log('音頻加載或播放錯誤:', error);
-            }
+        function startGame() {
+            backgroundMusic.play().catch(error => console.log('背景音樂播放失敗:', error));
+            showMole();
+            startCountdown();
         }
 
         function endGame() {
