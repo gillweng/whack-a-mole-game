@@ -6,7 +6,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
 
         body {
-            background: url('./background.png') no-repeat center / cover;
+            background: url('background.png') no-repeat center / cover;
             margin: 0;
             height: 100vh;
             display: flex;
@@ -83,8 +83,7 @@
         .hole {
             width: 100px;
             height: 100px;
-            background: #F5DEB3; /* 淺棕色作為貓窩底色 */
-            border: 5px solid #8B4513; /* 深棕色邊框模擬貓窩邊緣 */
+            background: radial-gradient(circle, rgba(139, 69, 19, 0.8) 20%, rgba(101, 67, 33, 0.8) 70%);
             border-radius: 50%;
             position: relative;
             overflow: hidden;
@@ -95,7 +94,7 @@
         .mole {
             width: 80px;
             height: 80px;
-            background: url('./1.png') no-repeat center / contain;
+            background: url('1.png') no-repeat center / contain;
             position: absolute;
             top: 10px;
             left: 10px;
@@ -139,13 +138,6 @@
             <div class="hole"><div class="mole hidden"></div></div>
             <div class="hole"><div class="mole hidden"></div></div>
         </div>
-        <!-- 音效檔案 -->
-        <audio id="background-music" loop>
-            <source src="./background-music.mp3" type="audio/mpeg">
-        </audio>
-        <audio id="hit-sound">
-            <source src="./hit-sound.mp3" type="audio/mpeg">
-        </audio>
     </div>
 
     <script>
@@ -154,78 +146,108 @@
         const scoreDisplay = document.getElementById('score');
         const timeDisplay = document.getElementById('time');
         const startBtn = document.getElementById('start-btn');
-        const backgroundMusic = document.getElementById('background-music');
-        const hitSound = document.getElementById('hit-sound');
-        
+
         let score = 0;
         let timeLeft = 30;
         let gameActive = false;
         let gameTimer;
         let countdownTimer;
-        
+        let moleTimer;
+
+        // 添加音頻物件
+        const backgroundMusic = new Audio('background-music.mp3');
+        const hitSound = new Audio('hit-sound.mp3');
+
+        // 設置背景音樂循環播放
+        backgroundMusic.loop = true;
+
+        // 函數來確保音頻上下文在用戶互動後啟用
+        function ensureAudioContext() {
+            return new Promise((resolve) => {
+                if (backgroundMusic.readyState >= 2) {
+                    resolve();
+                } else {
+                    backgroundMusic.addEventListener('loadeddata', resolve, { once: true });
+                }
+            });
+        }
+
         function randomHole() {
             const idx = Math.floor(Math.random() * holes.length);
             return holes[idx];
         }
-        
+
         function showMole() {
             if (!gameActive) return;
-            
+
             const hole = randomHole();
             const mole = hole.querySelector('.mole');
-            
+
             mole.classList.remove('hidden');
-            
-            setTimeout(() => {
+
+            moleTimer = setTimeout(() => {
                 mole.classList.add('hidden');
-                showMole();
+                if (gameActive) showMole();
             }, 1000);
         }
-        
+
         moles.forEach(mole => {
             mole.addEventListener('click', () => {
                 if (!mole.classList.contains('hidden') && gameActive) {
                     score++;
                     scoreDisplay.textContent = score;
                     mole.classList.add('hidden');
-                    hitSound.currentTime = 0; // 重置音效到開頭
-                    hitSound.play(); // 播放點擊音效
+                    // 播放擊中聲音
+                    hitSound.play().catch(error => console.log('打擊聲音播放失敗:', error));
                 }
             });
         });
-        
+
         function startCountdown() {
             countdownTimer = setInterval(() => {
                 timeLeft--;
                 timeDisplay.textContent = timeLeft;
                 if (timeLeft <= 0) {
-                    clearInterval(countdownTimer);
+                    endGame();
                 }
             }, 1000);
         }
-        
+
+        async function startGame() {
+            try {
+                // 確保音頻上下文在用戶互動後啟用
+                await ensureAudioContext();
+                backgroundMusic.play().catch(error => console.log('背景音樂播放失敗:', error));
+                showMole();
+                startCountdown();
+            } catch (error) {
+                console.log('音頻加載或播放錯誤:', error);
+            }
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(countdownTimer);
+            clearTimeout(moleTimer);
+            backgroundMusic.pause(); // 停止背景音樂
+            backgroundMusic.currentTime = 0; // 重置背景音樂
+            startBtn.textContent = '重新開始';
+            alert(`遊戲結束！你的得分是：${score}`);
+        }
+
         startBtn.addEventListener('click', () => {
             if (gameActive) return;
-            
+
             gameActive = true;
             score = 0;
             timeLeft = 30;
             scoreDisplay.textContent = score;
             timeDisplay.textContent = timeLeft;
-            startBtn.textContent = '......';
-            
-            backgroundMusic.play(); // 開始播放背景音樂
-            showMole();
-            startCountdown();
-            
-            gameTimer = setTimeout(() => {
-                gameActive = false;
-                clearInterval(countdownTimer);
-                startBtn.textContent = 'Re-start';
-                backgroundMusic.pause(); // 停止背景音樂
-                backgroundMusic.currentTime = 0; // 重置音樂
-                alert(`Game over！Your score is：${score}`);
-            }, 30000);
+            startBtn.textContent = '遊戲進行中...';
+
+            startGame();
+
+            gameTimer = setTimeout(endGame, 30000);
         });
     </script>
 </body>
