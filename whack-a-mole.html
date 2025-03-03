@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>打地鼠遊戲</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
+
+        body {
+            background: url('background.png') no-repeat center / cover; /* 背景圖片 */
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Comic Neue', cursive;
+        }
+
+        .game-container {
+            width: 700px;
+            background: transparent; /* 移除白色背景，讓背景圖透出 */
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2E8B57;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* 加強文字陰影以保持可見 */
+            margin: 0;
+            background: rgba(255, 255, 255, 0.7); /* 文字背景微白 */
+            padding: 5px 10px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .score-board {
+            font-size: 28px;
+            color: #FF4500;
+            margin: 15px 0;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* 加強陰影 */
+            background: rgba(255, 255, 255, 0.7); /* 微白背景 */
+            padding: 5px 10px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .timer {
+            font-size: 24px;
+            color: #4682B4;
+            margin: 10px 0;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* 加強陰影 */
+            background: rgba(255, 255, 255, 0.7); /* 微白背景 */
+            padding: 5px 10px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            background-color: #FFD700;
+            border: none;
+            border-radius: 25px;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            background-color: #FFA500;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* 5 列 */
+            gap: 15px;
+            width: 600px;
+            margin: 30px auto;
+        }
+
+        .hole {
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(139, 69, 19, 0.8) 20%, rgba(101, 67, 33, 0.8) 70%); /* 透明洞底 */
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
+        .mole {
+            width: 80px;
+            height: 80px;
+            background: url('1.png') no-repeat center / contain; /* 地鼠圖片 */
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .hidden {
+            transform: translateY(100px);
+        }
+
+        .mole:active {
+            transform: scale(0.9);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>fatCat</h1>
+        <div class="score-board">Score: <span id="score">0</span></div>
+        <div class="timer">Time: <span id="time">30</span> Sec</div>
+        <button id="start-btn">Start</button>
+        <div class="grid">
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+            <div class="hole"><div class="mole hidden"></div></div>
+        </div>
+    </div>
+
+    <script>
+        const holes = document.querySelectorAll('.hole');
+        const moles = document.querySelectorAll('.mole');
+        const scoreDisplay = document.getElementById('score');
+        const timeDisplay = document.getElementById('time');
+        const startBtn = document.getElementById('start-btn');
+        
+        let score = 0;
+        let timeLeft = 30;
+        let gameActive = false;
+        let gameTimer;
+        let countdownTimer;
+        
+        function randomHole() {
+            const idx = Math.floor(Math.random() * holes.length);
+            return holes[idx];
+        }
+        
+        function showMole() {
+            if (!gameActive) return;
+            
+            const hole = randomHole();
+            const mole = hole.querySelector('.mole');
+            
+            mole.classList.remove('hidden');
+            
+            setTimeout(() => {
+                mole.classList.add('hidden');
+                showMole();
+            }, 1000);
+        }
+        
+        moles.forEach(mole => {
+            mole.addEventListener('click', () => {
+                if (!mole.classList.contains('hidden') && gameActive) {
+                    score++;
+                    scoreDisplay.textContent = score;
+                    mole.classList.add('hidden');
+                }
+            });
+        });
+        
+        function startCountdown() {
+            countdownTimer = setInterval(() => {
+                timeLeft--;
+                timeDisplay.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(countdownTimer);
+                }
+            }, 1000);
+        }
+        
+        startBtn.addEventListener('click', () => {
+            if (gameActive) return;
+            
+            gameActive = true;
+            score = 0;
+            timeLeft = 30;
+            scoreDisplay.textContent = score;
+            timeDisplay.textContent = timeLeft;
+            startBtn.textContent = '遊戲進行中...';
+            
+            showMole();
+            startCountdown();
+            
+            gameTimer = setTimeout(() => {
+                gameActive = false;
+                clearInterval(countdownTimer);
+                startBtn.textContent = '重新開始';
+                alert(`遊戲結束！你的得分是：${score}`);
+            }, 30000);
+        });
+    </script>
+</body>
+</html>
