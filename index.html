@@ -1,251 +1,119 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>打地鼠遊戲</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
+const holes = document.querySelectorAll('.hole');
+const moles = document.querySelectorAll('.mole');
+const scoreDisplay = document.getElementById('score');
+const timeDisplay = document.getElementById('time');
+const startBtn = document.getElementById('start-btn');
 
-        body {
-            background: url('background.png') no-repeat center / cover;
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Comic Neue', cursive;
+let score = 0;
+let timeLeft = 30;
+let gameActive = false;
+let gameTimer;
+let countdownTimer;
+let moleTimer;
+
+// 添加音頻物件
+const backgroundMusic = new Audio('background-music.mp3');
+const hitSound = new Audio('hit-sound.mp3');
+
+// 設置背景音樂循環播放
+backgroundMusic.loop = true;
+
+// 確保音頻上下文在用戶互動後啟用
+function ensureAudioContext(audioElement) {
+    return new Promise((resolve) => {
+        if (audioElement.readyState >= 2) {
+            resolve();
+        } else {
+            audioElement.addEventListener('loadeddata', resolve, { once: true });
         }
+    });
+}
 
-        .game-container {
-            width: 700px;
-            background: transparent;
-            padding: 20px;
-            border-radius: 20px;
-            text-align: center;
-        }
+// 重置音頻物件以確保重複播放
+async function resetAndPlayAudio(audioElement) {
+    try {
+        audioElement.pause();
+        audioElement.currentTime = 0; // 重置到開始
+        await ensureAudioContext(audioElement); // 確保音頻上下文準備好
+        await audioElement.play(); // 播放音頻
+    } resetAndPlayAudio(audioElement); // 確保音頻上下文準備好
+        await audioElement.play(); // 播放音頻
+    } catch (error) {
+        console.log('音頻重置或播放錯誤:', error);
+    }
+}
 
-        h1 {
-            color: #2E8B57;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-            margin: 0;
-            background: rgba(255, 255, 255, 0.7);
-            padding: 5px 10px;
-            border-radius: 10px;
-            display: inline-block;
-        }
+function randomHole() {
+    const idx = Math.floor(Math.random() * holes.length);
+    return holes[idx];
+}
 
-        .score-board {
-            font-size: 28px;
-            color: #FF4500;
-            margin: 15px 0;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-            background: rgba(255, 255, 255, 0.7);
-            padding: 5px 10px;
-            border-radius: 10px;
-            display: inline-block;
-        }
+function showMole() {
+    if (!gameActive) return;
 
-        .timer {
-            font-size: 24px;
-            color: #4682B4;
-            margin: 10px 0;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-            background: rgba(255, 255, 255, 0.7);
-            padding: 5px 10px;
-            border-radius: 10px;
-            display: inline-block;
-        }
+    const hole = randomHole();
+    const mole = hole.querySelector('.mole');
 
-        button {
-            padding: 12px 30px;
-            font-size: 18px;
-            background-color: #FFD700;
-            border: none;
-            border-radius: 25px;
-            color: #fff;
-            cursor: pointer;
-            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s, background-color 0.2s;
-        }
+    mole.classList.remove('hidden');
 
-        button:hover {
-            transform: scale(1.05);
-            background-color: #FFA500;
-        }
+    moleTimer = setTimeout(() => {
+        mole.classList.add('hidden');
+        if (gameActive) showMole();
+    }, 1000);
+}
 
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            width: 600px;
-            margin: 30px auto;
-        }
-
-        .hole {
-            width: 100px;
-            height: 100px;
-            background: radial-gradient(circle, rgba(139, 69, 19, 0.8) 20%, rgba(101, 67, 33, 0.8) 70%);
-            border-radius: 50%;
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.3);
-            cursor: pointer;
-        }
-
-        .mole {
-            width: 80px;
-            height: 80px;
-            background: url('1.png') no-repeat center / contain;
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            transition: transform 0.3s ease-in-out;
-        }
-
-        .hidden {
-            transform: translateY(100px);
-        }
-
-        .mole:active {
-            transform: scale(0.9);
-        }
-    </style>
-</head>
-<body>
-    <div class="game-container">
-        <h1>fatCat</h1>
-        <div class="score-board">Score: <span id="score">0</span></div>
-        <div class="timer">Time: <span id="time">30</span> Sec</div>
-        <button id="start-btn">Start</button>
-        <div class="grid">
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-            <div class="hole"><div class="mole hidden"></div></div>
-        </div>
-    </div>
-
-    <script>
-        const holes = document.querySelectorAll('.hole');
-        const moles = document.querySelectorAll('.mole');
-        const scoreDisplay = document.getElementById('score');
-        const timeDisplay = document.getElementById('time');
-        const startBtn = document.getElementById('start-btn');
-
-        let score = 0;
-        let timeLeft = 30;
-        let gameActive = false;
-        let gameTimer;
-        let countdownTimer;
-        let moleTimer;
-
-        // 添加音頻物件
-        const backgroundMusic = new Audio('background-music.mp3');
-        const hitSound = new Audio('hit-sound.mp3');
-
-        // 設置背景音樂循環播放
-        backgroundMusic.loop = true;
-
-        // 函數來確保音頻上下文在用戶互動後啟用
-        function ensureAudioContext() {
-            return new Promise((resolve) => {
-                if (backgroundMusic.readyState >= 2) {
-                    resolve();
-                } else {
-                    backgroundMusic.addEventListener('loadeddata', resolve, { once: true });
-                }
-            });
-        }
-
-        function randomHole() {
-            const idx = Math.floor(Math.random() * holes.length);
-            return holes[idx];
-        }
-
-        function showMole() {
-            if (!gameActive) return;
-
-            const hole = randomHole();
-            const mole = hole.querySelector('.mole');
-
-            mole.classList.remove('hidden');
-
-            moleTimer = setTimeout(() => {
-                mole.classList.add('hidden');
-                if (gameActive) showMole();
-            }, 1000);
-        }
-
-        moles.forEach(mole => {
-            mole.addEventListener('click', () => {
-                if (!mole.classList.contains('hidden') && gameActive) {
-                    score++;
-                    scoreDisplay.textContent = score;
-                    mole.classList.add('hidden');
-                    // 只有點擊地鼠時播放聲音
-                    hitSound.play().catch(error => console.log('打擊聲音播放失敗:', error));
-                }
-            });
-        });
-
-        function startCountdown() {
-            countdownTimer = setInterval(() => {
-                timeLeft--;
-                timeDisplay.textContent = timeLeft;
-                if (timeLeft <= 0) {
-                    endGame();
-                }
-            }, 1000);
-        }
-
-        async function startGame() {
-            try {
-                await ensureAudioContext();
-                backgroundMusic.play().catch(error => console.log('背景音樂播放失敗:', error));
-                showMole();
-                startCountdown();
-            } catch (error) {
-                console.log('音頻加載或播放錯誤:', error);
-            }
-        }
-
-        function endGame() {
-            gameActive = false;
-            clearInterval(countdownTimer);
-            clearTimeout(moleTimer);
-            backgroundMusic.pause(); // 停止背景音樂
-            backgroundMusic.currentTime = 0; // 重置背景音樂
-            startBtn.textContent = '重新開始';
-            alert(`遊戲結束！你的得分是：${score}`);
-        }
-
-        startBtn.addEventListener('click', () => {
-            if (gameActive) return;
-
-            gameActive = true;
-            score = 0;
-            timeLeft = 30;
+moles.forEach(mole => {
+    mole.addEventListener('click', async () => {
+        if (!mole.classList.contains('hidden') && gameActive) {
+            score++;
             scoreDisplay.textContent = score;
-            timeDisplay.textContent = timeLeft;
-            startBtn.textContent = '遊戲進行中...';
+            mole.classList.add('hidden');
+            // 重置並播放擊中聲音
+            await resetAndPlayAudio(hitSound);
+        }
+    });
+});
 
-            startGame();
-        });
-    </script>
-</body>
-</html>
+function startCountdown() {
+    countdownTimer = setInterval(() => {
+        timeLeft--;
+        timeDisplay.textContent = timeLeft;
+        if (timeLeft <= 0) {
+            endGame();
+        }
+    }, 1000);
+}
+
+async function startGame() {
+    try {
+        await ensureAudioContext(backgroundMusic);
+        backgroundMusic.play().catch(error => console.log('背景音樂播放失敗:', error));
+        showMole();
+        startCountdown();
+    } catch (error) {
+        console.log('音頻加載或播放錯誤:', error);
+    }
+}
+
+function endGame() {
+    gameActive = false;
+    clearInterval(countdownTimer);
+    clearTimeout(moleTimer);
+    backgroundMusic.pause(); // 停止背景音樂
+    backgroundMusic.currentTime = 0; // 重置背景音樂
+    startBtn.textContent = '重新開始';
+    alert(`遊戲結束！你的得分是：${score}`);
+}
+
+startBtn.addEventListener('click', () => {
+    if (gameActive) return;
+
+    gameActive = true;
+    score = 0;
+    timeLeft = 30;
+    scoreDisplay.textContent = score;
+    timeDisplay.textContent = timeLeft;
+    startBtn.textContent = '遊戲進行中...';
+
+    startGame();
+});
