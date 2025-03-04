@@ -161,6 +161,32 @@
         // 設置背景音樂循環播放
         backgroundMusic.loop = true;
 
+        // 確保音頻上下文在用戶互動後啟用
+        function ensureAudioContext(audioElement) {
+            return new Promise((resolve) => {
+                if (audioElement.readyState >= 2) {
+                    resolve();
+                } else {
+                    audioElement.addEventListener('loadeddata', resolve, { once: true });
+                }
+            });
+        }
+
+        // 重置並播放音頻，確保每次點擊都能播放
+        async function resetAndPlayAudio(audioElement) {
+            try {
+                // 停止並重置音頻
+                audioElement.pause();
+                audioElement.currentTime = 0;
+                // 重新加載音頻以確保穩定性
+                audioElement.load(); // 強制重新加載音頻
+                await ensureAudioContext(audioElement); // 確保音頻上下文準備好
+                await audioElement.play(); // 播放音頻
+            } catch (error) {
+                console.log('音頻重置或播放錯誤:', error);
+            }
+        }
+
         function randomHole() {
             const idx = Math.floor(Math.random() * holes.length);
             return holes[idx];
@@ -181,13 +207,13 @@
         }
 
         moles.forEach(mole => {
-            mole.addEventListener('click', () => {
+            mole.addEventListener('click', async () => {
                 if (!mole.classList.contains('hidden') && gameActive) {
                     score++;
                     scoreDisplay.textContent = score;
                     mole.classList.add('hidden');
-                    // 播放擊中聲音
-                    hitSound.play().catch(error => console.log('打擊聲音播放失敗:', error));
+                    // 重置並播放擊中聲音，確保每次點擊都有聲音
+                    await resetAndPlayAudio(hitSound);
                 }
             });
         });
@@ -202,10 +228,15 @@
             }, 1000);
         }
 
-        function startGame() {
-            backgroundMusic.play().catch(error => console.log('背景音樂播放失敗:', error));
-            showMole();
-            startCountdown();
+        async function startGame() {
+            try {
+                await ensureAudioContext(backgroundMusic);
+                backgroundMusic.play().catch(error => console.log('背景音樂播放失敗:', error));
+                showMole();
+                startCountdown();
+            } catch (error) {
+                console.log('音頻加載或播放錯誤:', error);
+            }
         }
 
         function endGame() {
@@ -229,8 +260,6 @@
             startBtn.textContent = '遊戲進行中...';
 
             startGame();
-
-            gameTimer = setTimeout(endGame, 30000);
         });
     </script>
 </body>
