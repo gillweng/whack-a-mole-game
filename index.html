@@ -156,76 +156,94 @@
         const startBtn = document.getElementById('start-btn');
         const backgroundMusic = document.getElementById('background-music');
         const hitSound = document.getElementById('hit-sound');
-        
+
         let score = 0;
         let timeLeft = 30;
         let gameActive = false;
-        let gameTimer;
-        let countdownTimer;
-        
+        let gameTimer = null;
+        let countdownTimer = null;
+        let moleTimer = null;
+
+        // 隨機選擇一個洞
         function randomHole() {
             const idx = Math.floor(Math.random() * holes.length);
             return holes[idx];
         }
-        
+
+        // 顯示地鼠
         function showMole() {
             if (!gameActive) return;
-            
+
+            // 隱藏所有地鼠
+            moles.forEach(mole => mole.classList.add('hidden'));
+
             const hole = randomHole();
             const mole = hole.querySelector('.mole');
-            
             mole.classList.remove('hidden');
-            
-            setTimeout(() => {
+
+            // 設置地鼠出現時間（隨機 0.5 到 1.5 秒）
+            moleTimer = setTimeout(() => {
                 mole.classList.add('hidden');
-                showMole();
-            }, 1000);
+                showMole(); // 繼續顯示下一個地鼠
+            }, Math.random() * 1000 + 500);
         }
-        
+
+        // 點擊地鼠事件
         moles.forEach(mole => {
             mole.addEventListener('click', () => {
                 if (!mole.classList.contains('hidden') && gameActive) {
                     score++;
                     scoreDisplay.textContent = score;
                     mole.classList.add('hidden');
-                    hitSound.currentTime = 0; // 重置音效到開頭
-                    hitSound.play(); // 播放點擊音效
+                    hitSound.currentTime = 0; // 重置音效
+                    hitSound.play().catch(err => console.log('音效播放失敗:', err)); // 處理音效播放錯誤
                 }
             });
         });
-        
+
+        // 倒數計時
         function startCountdown() {
             countdownTimer = setInterval(() => {
                 timeLeft--;
                 timeDisplay.textContent = timeLeft;
                 if (timeLeft <= 0) {
-                    clearInterval(countdownTimer);
+                    endGame();
                 }
             }, 1000);
         }
-        
+
+        // 結束遊戲
+        function endGame() {
+            gameActive = false;
+            clearInterval(countdownTimer);
+            clearTimeout(moleTimer);
+            clearTimeout(gameTimer);
+            startBtn.textContent = 'Re-start';
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
+            moles.forEach(mole => mole.classList.add('hidden')); // 隱藏所有地鼠
+            alert(`遊戲結束！你的得分是：${score}`);
+        }
+
+        // 開始遊戲
         startBtn.addEventListener('click', () => {
             if (gameActive) return;
-            
+
+            // 初始化遊戲狀態
             gameActive = true;
             score = 0;
             timeLeft = 30;
             scoreDisplay.textContent = score;
             timeDisplay.textContent = timeLeft;
-            startBtn.textContent = '......';
-            
-            backgroundMusic.play(); // 開始播放背景音樂
+            startBtn.textContent = 'Playing...';
+
+            // 啟動遊戲
+            backgroundMusic.play().catch(err => console.log('背景音樂播放失敗:', err)); // 處理音樂播放錯誤
             showMole();
             startCountdown();
-            
-            gameTimer = setTimeout(() => {
-                gameActive = false;
-                clearInterval(countdownTimer);
-                startBtn.textContent = 'Re-start';
-                backgroundMusic.pause(); // 停止背景音樂
-                backgroundMusic.currentTime = 0; // 重置音樂
-                alert(`Game over！Your score is：${score}`);
-            }, 30000);
+
+            // 設置遊戲總時長（30秒）
+            gameTimer = setTimeout(endGame, 30000);
         });
     </script>
 </body>
